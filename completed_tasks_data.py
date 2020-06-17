@@ -46,10 +46,13 @@ color_by_index = {
 dias_da_semana = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"]
 
 projects_handler = api.state["projects"]
+archive = api.projects.get_archived()
 
 projects_data = list()
 for project_handler in projects_handler:
     projects_data.append(project_handler.data)
+for project in archive:
+    projects_data.append(project)
 projects_data = pd.DataFrame(projects_data)[["id", "name", "color"]]
 projects_data.set_index("id", inplace=True)
 
@@ -106,4 +109,8 @@ xmax = max(*[sum(row[1]) for row in graph_data.iterrows()])
 plt.xticks([int(x) for x in range(xmax + 1)])
 plt.grid(axis="x", color="#505050", linestyle="--")
 plt.tight_layout()
+l = plt.legend(graph_data.columns, frameon=False)
+for text in l.get_texts():
+    plt.setp(text, color = '#A5A5A5')
+
 plt.savefig("Relatório_Todoist_{}|{}.png".format(since[:-6], until[:-6]), transparent=True)
