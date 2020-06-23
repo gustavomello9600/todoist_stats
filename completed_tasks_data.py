@@ -24,7 +24,7 @@ def process(date):
     return "{}-{}-{}T00:00".format(year, month, day)
 
 since = process(input("> Desde a data: "))
-until = process(input("> Até a data:   "))
+until = process(input("> Até a data:   "))[:-5] + "23:59"
 
 relevant_tasks    = api.completed.get_all(since=since, until=until)["items"]
 relevant_projects = api.completed.get_all(since=since, until=until)["projects"]
@@ -100,10 +100,10 @@ first = True
 for i, project in enumerate(graph_data.columns):
     color = color_by_index[projects_color.loc[project]["color"]]
     if first:
-        plt.barh(y, graph_data[project], color=color)
+        plt.barh(y, graph_data[project], height=0.3, color=color)
         first = False
     else:
-        plt.barh(y, graph_data[project], color=color, left=cum_sum.iloc[:, i-1])
+        plt.barh(y, graph_data[project], height=0.3, color=color, left=cum_sum.iloc[:, i-1])
 plt.yticks(y, days, color="#A5A5A5", fontfamily="monospace")
 xmax = max(*[sum(row[1]) for row in graph_data.iterrows()])
 plt.xticks([int(x) for x in range(xmax + 1)])
@@ -112,5 +112,5 @@ plt.tight_layout()
 l = plt.legend(graph_data.columns, frameon=False)
 for text in l.get_texts():
     plt.setp(text, color = '#A5A5A5')
-
+plt.axvline(x=5, c="grey")
 plt.savefig("Relatório_Todoist_{}|{}.png".format(since[:-6], until[:-6]), transparent=True)
