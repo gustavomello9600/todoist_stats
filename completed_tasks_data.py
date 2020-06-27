@@ -2,6 +2,7 @@ import pandas as pd
 
 from notion.client import NotionClient
 from notion.collection import Collection
+from notion.block import CollectionViewBlock
 from matplotlib import pyplot as plt
 from todoist.api import TodoistAPI
 from datetime import timedelta
@@ -50,7 +51,7 @@ def process(date):
 
 # Recebe e processa o intervalo desejado
 since = process(input("> Desde a data: "))
-until = process(input("> Até a data:   "))[:-5] + "23:59"
+until = process(input("> Até a data  : "))[:-5] + "23:59"
 
 # Recupera as tarefas completadas no período de interesse
 relevant_tasks = api.completed.get_all(since=since, until=until)["items"]
@@ -198,11 +199,33 @@ plt.axvline(x=5, c="grey")
 plt.savefig("Relatório_Todoist_{}|{}.png".format(since[:-6], until[:-6]), transparent=True)
 
 
+## RELATÓRIO NO NOTION
+
 # Abre a página de integração com o Todoist
 page = client.get_block("https://www.notion.so/Track-Record-do-Todoist-0e2d8455260d45d29418ba44dd88936d")
 
-# Cria uma nova tabela de relatório
-report = page.children.add_new(Collection, title="Tarefas completadas no Todoist entre {} e {}".format(
-                                                swap_dm(make_label(pd.to_datetime(since)))[:5],
-                                                swap_dm(make_label(pd.to_datetime(until)))[:5]))
+# Cria uma nova coleção vazia
+report_id = client.create_record("collection", page)
+
+# Retorna a coleção como objeto
+report = client.get_collection(report_id)
+
+# Atribui um nome a ela
+report.name = "Tarefas completadas no Todoist entre {} e {}".format(
+                                      swap_dm(make_label(pd.to_datetime(since)))[:5],
+                                      swap_dm(make_label(pd.to_datetime(until)))[:5])
+
+# Copia as propriedades do modelo
+report.set("schema", client.get_block("064c6302-a6a2-475b-a979-1d2ad160c482").collection.get("schema"))
+
+# Cria um bloco para mostrar o relatório
+report_block = page.children.add_new(CollectionViewBlock, collection=report)
+
+# Cria uma visualização em tabela
+report_table = report_block.views.add_new(view_type="table")
+
+# Adiciona linhas de acordo com as tarefas completadas
+for i, tarefa in tasks_table.iterrows():
+    row = report.add_row()
+    row.nome
 
