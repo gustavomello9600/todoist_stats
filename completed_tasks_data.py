@@ -1,3 +1,5 @@
+from random import choice
+
 import pandas as pd
 
 from notion.client import NotionClient
@@ -91,7 +93,7 @@ tasks_table = \
                                                 for pid in x.project_id])
 
 # Filtra e reorganiza a tabela
-tasks_table = tasks_table[["completed_date", "content", "project_name", "project_color"]]
+tasks_table = tasks_table[["task_id", "completed_date", "content", "project_name", "project_color"]]
 
 # Transforma o tipo de dados da coluna para o formato de data
 tasks_table["completed_date"] = pd.to_datetime(tasks_table["completed_date"])
@@ -199,6 +201,7 @@ plt.axvline(x=5, c="grey")
 # Salva o gráfico num arquivo png de fundo transparente
 plt.savefig("Relatório_Todoist_{}|{}.png".format(since[:-6], until[:-6]), transparent=True)
 
+print("Gráfico gerado e salvo na pasta raiz")
 
 ## RELATÓRIO NO NOTION
 
@@ -219,15 +222,22 @@ new_options = [pn for pn in project_name_list if pn not in options_list]
 if len(new_options) > 0:
     updated_schema = schema
     for option in new_options:
+        updated_schema["}%J^"]["options"].append(
+            {"id": str(uuid4()), "color": choice(color_options), "value": option})
+        task_history.collection.set("schema", updated_schema)
 
+reported_tasks_id = [row.unico for row in task_history.collection.get_rows()]
 
 # Adiciona linhas de acordo com as tarefas completadas
 for i, task in tasks_table.iterrows():
-    row = task_history.collection.add_row()
+    if task["task_id"] in reported_tasks_id: continue
+    row               = task_history.collection.add_row()
     row.nome          = task["content"]
     row.projeto       = task["project_name"]
     row.completada_em = NotionDate(task["completed_date"])
+    row.unico = task["task_id"]
 
 # Adiciona uma linha em branco ao final
 row = task_history.collection.add_row()
 
+print("Notion atualizado")
