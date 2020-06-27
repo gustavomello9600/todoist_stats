@@ -1,11 +1,12 @@
 import pandas as pd
 
 from notion.client import NotionClient
-from notion.collection import Collection
+from notion.collection import Collection, NotionDate, TableView
 from notion.block import CollectionViewBlock
 from matplotlib import pyplot as plt
 from todoist.api import TodoistAPI
 from datetime import timedelta
+from uuid import uuid4
 
 #Autenticação no Notion
 client = NotionClient(token_v2="4abee418c178fa57d1f5d1fde8ab313a28b0859921c74f74874709258f863b0a846dbccfdbb717"
@@ -204,28 +205,29 @@ plt.savefig("Relatório_Todoist_{}|{}.png".format(since[:-6], until[:-6]), trans
 # Abre a página de integração com o Todoist
 page = client.get_block("https://www.notion.so/Track-Record-do-Todoist-0e2d8455260d45d29418ba44dd88936d")
 
-# Cria uma nova coleção vazia
-report_id = client.create_record("collection", page)
+# Abre o histórico de tarefas
+task_history = page.children[0]
 
-# Retorna a coleção como objeto
-report = client.get_collection(report_id)
+# Atualiza a lista de projetos
+color_options = ["red", "green", "pink", "orange", "yellow", "purple", "blue", "default", "gray", "brown"]
 
-# Atribui um nome a ela
-report.name = "Tarefas completadas no Todoist entre {} e {}".format(
-                                      swap_dm(make_label(pd.to_datetime(since)))[:5],
-                                      swap_dm(make_label(pd.to_datetime(until)))[:5])
+schema = task_history.collection.get("schema")
+options_list = [op["value"] for op in schema["}%J^"]["options"]]
+project_name_list = list(pd.unique(tasks_table["project_name"]))
+new_options = [pn for pn in project_name_list if pn not in options_list]
 
-# Copia as propriedades do modelo
-report.set("schema", client.get_block("064c6302-a6a2-475b-a979-1d2ad160c482").collection.get("schema"))
+if len(new_options) > 0:
+    updated_schema = schema
+    for option in new_options:
 
-# Cria um bloco para mostrar o relatório
-report_block = page.children.add_new(CollectionViewBlock, collection=report)
-
-# Cria uma visualização em tabela
-report_table = report_block.views.add_new(view_type="table")
 
 # Adiciona linhas de acordo com as tarefas completadas
-for i, tarefa in tasks_table.iterrows():
-    row = report.add_row()
-    row.nome
+for i, task in tasks_table.iterrows():
+    row = task_history.collection.add_row()
+    row.nome          = task["content"]
+    row.projeto       = task["project_name"]
+    row.completada_em = NotionDate(task["completed_date"])
+
+# Adiciona uma linha em branco ao final
+row = task_history.collection.add_row()
 
