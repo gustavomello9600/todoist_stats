@@ -10,9 +10,9 @@ from todoist.api import TodoistAPI
 from datetime import timedelta
 from uuid import uuid4
 
-#Autenticação no Notion
-client = NotionClient(token_v2="4abee418c178fa57d1f5d1fde8ab313a28b0859921c74f74874709258f863b0a846dbccfdbb717"
-                               "121f9d5282e0fe93b28590dc37bcf28c98d3d937c23db1a27a475624d2e4bd0754dc5b1e263cb7")
+# Autenticação no Notion
+client = NotionClient(token_v2="8608f0568414045d6ac8d7fd9a647bf3e544d1b2e7985c251152422697b2f8082b"
+                               "59eb7e45aa7bd0c26f6585922aeccb129ae85b8ef3faddb790854061f76a1d97fd22d2f90d732463aad8196e18")
 
 # Constantes e Dicionários
 month_number = {"jan": 1, "fev": 2, "mar": 3, "abr": 4,
@@ -97,6 +97,11 @@ tasks_table = tasks_table[["task_id", "completed_date", "content", "project_name
 
 # Transforma o tipo de dados da coluna para o formato de data
 tasks_table["completed_date"] = pd.to_datetime(tasks_table["completed_date"])
+
+# Ajusta a zona de horários
+tasks_table["completed_date"] = tasks_table["completed_date"].dt.tz_convert("America/Fortaleza")
+
+# Debug
 print(tasks_table["completed_date"])
 
 # Ensina o Python a criar etiquetas identificadoras do dia
@@ -200,7 +205,7 @@ for text in leg.get_texts():
 plt.axvline(x=5, c="grey")
 
 # Salva o gráfico num arquivo png de fundo transparente
-plt.savefig("Relatório_Todoist_{}|{}.png".format(since[:-6], until[:-6]), transparent=True)
+plt.savefig("Relatório_Todoist_{}_até_{}.png".format(since[:-6], until[:-6]), transparent=True)
 
 print("Gráfico gerado e salvo na pasta raiz")
 
