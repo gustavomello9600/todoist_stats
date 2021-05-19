@@ -2,17 +2,14 @@ from random import choice
 
 import pandas as pd
 
-from notion.client import NotionClient
-from notion.collection import Collection, NotionDate, TableView
-from notion.block import CollectionViewBlock
+from notion_client import Client
 from matplotlib import pyplot as plt
 from todoist.api import TodoistAPI
 from datetime import timedelta
 from uuid import uuid4
 
-#Autenticação no Notion
-client = NotionClient(token_v2="4abee418c178fa57d1f5d1fde8ab313a28b0859921c74f74874709258f863b0a846dbccfdbb717"
-                               "121f9d5282e0fe93b28590dc37bcf28c98d3d937c23db1a27a475624d2e4bd0754dc5b1e263cb7")
+# Autenticação no Notion
+notion = Client(auth="secret_Rvlf6qUOEuOaWx68sCpNKvdZ0e8ObgpzqXhcAthofWh")
 
 # Constantes e Dicionários
 month_number = {"jan": 1, "fev": 2, "mar": 3, "abr": 4,
@@ -97,6 +94,11 @@ tasks_table = tasks_table[["task_id", "completed_date", "content", "project_name
 
 # Transforma o tipo de dados da coluna para o formato de data
 tasks_table["completed_date"] = pd.to_datetime(tasks_table["completed_date"])
+
+# Ajusta a zona de horários
+tasks_table["completed_date"] = tasks_table["completed_date"].dt.tz_convert("America/Fortaleza")
+
+# Debug
 print(tasks_table["completed_date"])
 
 # Ensina o Python a criar etiquetas identificadoras do dia
@@ -200,17 +202,23 @@ for text in leg.get_texts():
 plt.axvline(x=5, c="grey")
 
 # Salva o gráfico num arquivo png de fundo transparente
-plt.savefig("Relatório_Todoist_{}|{}.png".format(since[:-6], until[:-6]), transparent=True)
+plt.savefig("Relatório_Todoist_{}_até_{}.png".format(since[:-6], until[:-6]), transparent=True)
 
 print("Gráfico gerado e salvo na pasta raiz")
 
 ## RELATÓRIO NO NOTION
 
-# Abre a página de integração com o Todoist
-page = client.get_block("https://www.notion.so/Track-Record-do-Todoist-0e2d8455260d45d29418ba44dd88936d")
+todoist_track_record = notion.databases.list()['results'][1]
+update_projects_options()
+add_new_completed_tasks()
 
-# Abre o histórico de tarefas
-task_history = page.children[0]
+def update_projects_options():
+    current_notion_project_options = todoist_track_record["properties"]["Projeto"]['select']['options']
+
+    current_notion_project_options_names = set([project['name'] for project in current_notion_project_options)
+    demanded_todoist_project_options_names = set(tasks_table["project_name"])
+
+    new_notion_projects_options_demanded = [pn for pn in demanded_todoist_project_options_names if pn not in current_notion_project_options_names]
 
 # Atualiza a lista de projetos
 color_options = ["red", "green", "pink", "orange", "yellow", "purple", "blue", "default", "gray", "brown"]
